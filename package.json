@@ -1,0 +1,29 @@
+{
+  "name": "sd-2026",
+  "private": true,
+  "packageManager": "pnpm@10.9.0",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev": "turbo dev",
+    "build": "turbo build",
+    "lint": "turbo lint",
+    "db:generate": "pnpm --filter @sd/db db:generate",
+    "db:push": "pnpm --filter @sd/db db:push",
+    "db:migrate": "pnpm --filter @sd/db db:migrate",
+    "db:seed": "pnpm --filter @sd/db db:seed"
+  },
+  "devDependencies": {
+    "turbo": "^2.5.0"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "@prisma/client",
+      "@prisma/engines",
+      "esbuild",
+      "prisma",
+      "sharp"
+    ]
+  }
+}

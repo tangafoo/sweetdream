@@ -1,0 +1,51 @@
+const STAR_PATH =
+  "M10 1.5l2.47 5.34 5.84.65-4.34 3.96 1.17 5.76L10 14.3l-5.14 2.9 1.17-5.75L1.69 7.5l5.84-.66L10 1.5z";
+
+function StarRow({ className = "" }: { className?: string }) {
+  return (
+    <span className={`inline-flex gap-0.5 ${className}`} aria-hidden="true">
+      {Array.from({ length: 5 }, (_, i) => (
+        <svg key={i} viewBox="0 0 20 20" className="h-[1em] w-[1em]" fill="currentColor">
+          <path d={STAR_PATH} />
+        </svg>
+      ))}
+    </span>
+  );
+}
+
+interface Props {
+  rating: number | null;
+  count?: number;
+  className?: string;
+}
+
+/** Fractional star display: outline row with a width-clipped filled overlay. */
+export function StarRating({ rating, count, className = "" }: Props) {
+  if (rating === null) {
+    return (
+      <span className={`text-sm text-ink-soft ${className}`}>No reviews yet</span>
+    );
+  }
+  const pct = Math.max(0, Math.min(100, (rating / 5) * 100));
+  return (
+    <span
+      className={`inline-flex items-center gap-2 ${className}`}
+      aria-label={`Rated ${rating.toFixed(1)} out of 5${count !== undefined ? ` from ${count} reviews` : ""}`}
+    >
+      <span className="relative inline-flex text-base leading-none">
+        <StarRow className="text-line" />
+        <span
+          className="absolute inset-y-0 left-0 overflow-hidden whitespace-nowrap"
+          style={{ width: `${pct}%` }}
+        >
+          <StarRow className="text-clay" />
+        </span>
+      </span>
+      {count !== undefined && (
+        <span className="text-sm text-ink-soft">
+          {rating.toFixed(1)} · {count} review{count === 1 ? "" : "s"}
+        </span>
+      )}
+    </span>
+  );
+}

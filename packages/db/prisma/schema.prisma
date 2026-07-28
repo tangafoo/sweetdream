@@ -1,0 +1,57 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model Product {
+  id               String   @id @default(cuid())
+  slug             String   @unique
+  name             String
+  tagline          String
+  description      String
+  firmness         Int      @db.SmallInt // 1 (plush) – 10 (firm)
+  heightInches     Int
+  features         Json // string[]
+  sizes            Json // [{ label: "Queen", priceCents: 129900 }, ...]
+  basePriceCents   Int // min(sizes.priceCents), denormalized for "From $X"
+  heroImageKey     String
+  galleryImageKeys String[]
+  sortOrder        Int      @unique // carousel position 0–13
+  createdAt        DateTime @default(now())
+  reviews          Review[]
+}
+
+enum ReviewStatus {
+  PUBLISHED
+  PENDING // moderation API unavailable — fail closed, hidden until manually flipped
+  REJECTED // flagged by moderation — kept for audit, never shown
+}
+
+model Review {
+  id         String        @id @default(cuid())
+  product    Product       @relation(fields: [productId], references: [id], onDelete: Cascade)
+  productId  String
+  rating     Int           @db.SmallInt // 1–5
+  authorName String        @db.VarChar(80)
+  body       String        @db.VarChar(2000)
+  status     ReviewStatus  @default(PUBLISHED)
+  ipHash     String? // sha256(ip + IP_HASH_SALT), audit only
+  moderation Json? // raw moderation category scores, audit only
+  createdAt  DateTime      @default(now())
+  images     ReviewImage[]
+
+  @@index([productId, status, createdAt(sort: Desc)])
+}
+
+model ReviewImage {
+  id        String @id @default(cuid())
+  review    Review @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  reviewId  String
+  key       String // R2 object key, e.g. "reviews/<draftId>/0.webp"
+  sortOrder Int    @default(0)
+}

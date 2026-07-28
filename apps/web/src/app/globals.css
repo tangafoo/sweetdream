@@ -1,0 +1,45 @@
+@import "tailwindcss";
+
+@theme {
+  /* palette: warm ivory canvas, near-black ink, clay accent */
+  --color-ivory: #faf7f2;
+  --color-sand: #f0e9df;
+  --color-line: #e4dbcd;
+  --color-ink: #1c1713;
+  --color-ink-soft: #6f665c;
+  --color-clay: #a85a32;
+  --color-clay-deep: #8a4826;
+
+  --font-display: var(--font-fraunces), "Georgia", serif;
+  --font-sans: var(--font-inter), system-ui, sans-serif;
+
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+html {
+  scroll-behavior: smooth;
+  /* two-finger horizontal swipes page the carousel — never browser history */
+  overscroll-behavior-x: none;
+}
+
+body {
+  overscroll-behavior-x: none;
+}
+
+body {
+  background-color: var(--color-ivory);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background-color: var(--color-clay);
+  color: var(--color-ivory);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
