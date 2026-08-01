@@ -7,6 +7,9 @@ export function SizeGuide({ sizes }: { sizes: SizePricing }) {
     ...size,
     dims: SIZE_DIMENSIONS[size.label] ?? { width: null, length: null },
   }));
+  // No measurements at all → render a plain size/price table instead of
+  // columns full of "—" placeholders; the note still says they're coming.
+  const hasDims = rows.some((r) => r.dims.width || r.dims.length);
   const incomplete = rows.some((r) => !r.dims.width || !r.dims.length);
 
   return (
@@ -15,8 +18,12 @@ export function SizeGuide({ sizes }: { sizes: SizePricing }) {
         <thead>
           <tr className="border-b border-line text-left text-ink-soft">
             <th scope="col" className="py-3 pr-4 font-normal">Size</th>
-            <th scope="col" className="py-3 pr-4 font-normal">Width</th>
-            <th scope="col" className="py-3 pr-4 font-normal">Length</th>
+            {hasDims && (
+              <>
+                <th scope="col" className="py-3 pr-4 font-normal">Width</th>
+                <th scope="col" className="py-3 pr-4 font-normal">Length</th>
+              </>
+            )}
             <th scope="col" className="py-3 text-right font-normal">Price</th>
           </tr>
         </thead>
@@ -26,12 +33,16 @@ export function SizeGuide({ sizes }: { sizes: SizePricing }) {
               <th scope="row" className="py-3.5 pr-4 text-left font-medium">
                 {row.label}
               </th>
-              <td className="py-3.5 pr-4 tabular-nums text-ink/85">
-                {row.dims.width ?? DIM_PLACEHOLDER}
-              </td>
-              <td className="py-3.5 pr-4 tabular-nums text-ink/85">
-                {row.dims.length ?? DIM_PLACEHOLDER}
-              </td>
+              {hasDims && (
+                <>
+                  <td className="py-3.5 pr-4 tabular-nums text-ink/85">
+                    {row.dims.width ?? DIM_PLACEHOLDER}
+                  </td>
+                  <td className="py-3.5 pr-4 tabular-nums text-ink/85">
+                    {row.dims.length ?? DIM_PLACEHOLDER}
+                  </td>
+                </>
+              )}
               <td className="py-3.5 text-right tabular-nums">
                 {formatPrice(row.priceCents)}
               </td>

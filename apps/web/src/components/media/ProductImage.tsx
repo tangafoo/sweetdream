@@ -10,38 +10,55 @@ interface Props {
   sizes?: string;
   priority?: boolean;
   className?: string;
+  /** contain (default) never crops the mattress; cover fills the box. */
+  fit?: "contain" | "cover";
+  /**
+   * Card chrome (rounding, shadow, background) applied ONLY when the gradient
+   * placeholder renders. Real photos get none of it — they sit contained and
+   * transparent on whatever is behind them.
+   */
+  placeholderClassName?: string;
 }
 
-function hueFromKey(key: string): number {
-  let h = 0;
+// Placeholder tones stay inside the brand's grey→blue family, but vary in
+// strength per key — some near-neutral, some clearly blue (colorblocked).
+function toneFromKey(key: string): { h: number; s: number } {
+  let n = 0;
   for (let i = 0; i < key.length; i++) {
-    h = (h * 31 + key.charCodeAt(i)) % 360;
+    n = (n * 31 + key.charCodeAt(i)) % 100000;
   }
-  return h;
+  return { h: 198 + (n % 42), s: 10 + ((n >> 3) % 30) };
 }
 
 /**
  * Renders the R2 image for a key, or — when the bucket isn't configured yet /
- * the object 404s — a designed placeholder (deterministic warm gradient +
- * faint mattress outline). Drop real images into the bucket at the seeded
+ * the object 404s — a designed placeholder (deterministic grey→blue gradient
+ * + faint mattress outline). Drop real images into the bucket at the seeded
  * keys and these flip to photos with zero code changes.
  *
  * Must be placed inside a `position: relative` container with a size.
  */
-export function ProductImage({ imageKey, alt, sizes, priority, className = "" }: Props) {
+export function ProductImage({
+  imageKey,
+  alt,
+  sizes,
+  priority,
+  className = "",
+  fit = "contain",
+  placeholderClassName = "",
+}: Props) {
   const [errored, setErrored] = useState(false);
   const url = imageUrl(imageKey);
 
   if (!url || errored) {
-    const h = hueFromKey(imageKey);
-    const label = imageKey.split("/").slice(-2).join("/");
+    const { h, s } = toneFromKey(imageKey);
     return (
       <div
         role="img"
         aria-label={alt}
-        className={`absolute inset-0 overflow-hidden ${className}`}
+        className={`absolute inset-0 overflow-hidden ${placeholderClassName} ${className}`}
         style={{
-          background: `linear-gradient(150deg, hsl(${h} 30% 91%), hsl(${(h + 40) % 360} 26% 79%))`,
+          background: `linear-gradient(150deg, hsl(${h} ${s}% 91%), hsl(${h + 14} ${s}% 79%))`,
         }}
       >
         <svg
@@ -58,7 +75,7 @@ export function ProductImage({ imageKey, alt, sizes, priority, className = "" }:
           <rect x="114" y="30" width="52" height="22" rx="9" />
         </svg>
         <span className="absolute bottom-2 left-3 font-mono text-[10px] tracking-wide text-ink/30">
-          {label}
+          {imageKey}
         </span>
       </div>
     );
@@ -71,7 +88,7 @@ export function ProductImage({ imageKey, alt, sizes, priority, className = "" }:
       fill
       sizes={sizes}
       priority={priority}
-      className={`object-cover ${className}`}
+      className={`${fit === "cover" ? "object-cover" : "object-contain"} ${className}`}
       onError={() => setErrored(true)}
     />
   );

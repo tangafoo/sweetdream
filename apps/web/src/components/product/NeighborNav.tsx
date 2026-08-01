@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ProductImage } from "@/components/media/ProductImage";
+import { ProductName } from "@/components/product/ProductName";
 import { formatPrice } from "@/lib/format";
 import type { ProductSummary } from "@/lib/queries";
 
@@ -24,7 +25,9 @@ function NeighborCard({
         <span className="block text-xs uppercase tracking-widest text-ink-soft">
           {direction === "prev" ? "← Previous" : "Next →"}
         </span>
-        <span className="mt-1 block font-display text-xl">{product.name}</span>
+        <span className="mt-1 block font-display text-xl">
+          <ProductName name={product.name} />
+        </span>
         <span className="mt-0.5 block text-sm text-ink-soft">
           From {formatPrice(product.basePriceCents)}
         </span>

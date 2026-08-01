@@ -3,8 +3,10 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Footer } from "@/components/brand/Footer";
 import { Gallery } from "@/components/product/Gallery";
+import { KeyboardNav } from "@/components/product/KeyboardNav";
 import { NeighborNav } from "@/components/product/NeighborNav";
 import { PriceBySize } from "@/components/product/PriceBySize";
+import { ProductName } from "@/components/product/ProductName";
 import { SizeGuide } from "@/components/product/SizeGuide";
 import { SpecList } from "@/components/product/SpecList";
 import { ReviewForm } from "@/components/reviews/ReviewForm";
@@ -60,7 +62,7 @@ export default async function ProductPage({
     image: imageUrl(product.heroImageKey) ?? undefined,
     offers: {
       "@type": "AggregateOffer",
-      priceCurrency: "USD",
+      priceCurrency: "MYR",
       lowPrice: (Math.min(...sizes.map((s) => s.priceCents)) / 100).toFixed(2),
       highPrice: (Math.max(...sizes.map((s) => s.priceCents)) / 100).toFixed(2),
       offerCount: sizes.length,
@@ -80,6 +82,7 @@ export default async function ProductPage({
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
+      <KeyboardNav prevSlug={prev?.slug ?? null} nextSlug={next?.slug ?? null} />
 
       <Link
         href={`/?p=${product.slug}`}
@@ -100,7 +103,7 @@ export default async function ProductPage({
 
         <div>
           <h1 className="font-display text-4xl tracking-tight md:text-5xl">
-            {product.name}
+            <ProductName name={product.name} />
           </h1>
           <p className="mt-2 text-lg text-ink-soft">{product.tagline}</p>
           <a href="#reviews" className="mt-4 inline-block">
