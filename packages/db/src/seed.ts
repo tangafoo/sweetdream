@@ -20,14 +20,19 @@ async function main() {
       select: { id: true, slug: true, _count: { select: { reviews: true } } },
     });
     let created = 0;
-    for (const [i, product] of products.entries()) {
+    const now = Date.now();
+    for (const product of products) {
       if (product._count.reviews > 0) continue; // don't stack demo data on real reviews
-      // vary count/selection per product so the histograms look organic
-      const count = (i % sampleReviews.length) + 1;
-      for (let j = 0; j < count; j++) {
-        const sample = sampleReviews[(i + j) % sampleReviews.length];
+      const samples = sampleReviews[product.slug] ?? [];
+      for (const [j, sample] of samples.entries()) {
+        // deterministic spread over the past ~6 months so lists don't share one timestamp
+        const daysAgo = ((product.slug.length * 13 + j * 37) % 170) + 3;
         await prisma.review.create({
-          data: { productId: product.id, ...sample },
+          data: {
+            productId: product.id,
+            ...sample,
+            createdAt: new Date(now - daysAgo * 86_400_000),
+          },
         });
         created++;
       }
