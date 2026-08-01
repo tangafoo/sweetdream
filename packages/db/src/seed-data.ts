@@ -117,8 +117,8 @@ export const seedProducts: SeedProduct[] = [
     14,
     { single: 6180, twin: 6748, queen: 8280, king: 10180 },
     {
-      hero: "unity-front.webp", // no -hero shot; front is the lead
-      gallery: ["unity-detailed.webp", "unity-diagonal.webp", "unity-skeleton.webp"],
+      hero: "unity-hero.webp",
+      gallery: ["unity-front.webp", "unity-detailed.webp", "unity-diagonal.webp", "unity-skeleton.webp"],
     },
     "The Unity is built around a simple idea: one balanced build that works for the whole household — side, back, or combination sleepers, lighter or heavier frames.\n\nA cushioned surface takes the pressure off shoulders and hips while the core holds everything level, so two very different sleepers can share it without compromise.",
     [
