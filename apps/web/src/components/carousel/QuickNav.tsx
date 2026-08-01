@@ -75,9 +75,7 @@ export function QuickNav({ products, index, open, onSelect, onClose }: Props) {
             }
             // The strip owns every gesture over it: wheels scroll it (vertical
             // deltas are folded into horizontal travel so a plain mouse wheel
-            // works too) and never reach the stage's paging/peek handlers.
-            // Manual scrollLeft is required anyway — the stage's native
-            // history-swipe guard preventDefaults horizontal wheels.
+            // works too) and never reach the stage's ladder/paging handlers.
             onWheel={(e) => {
               e.stopPropagation();
               const el = stripRef.current;
