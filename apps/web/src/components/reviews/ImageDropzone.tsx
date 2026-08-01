@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { processImageFile, type ProcessedImage } from "@/lib/client-image";
 import { MAX_REVIEW_IMAGES } from "@/lib/validation";
 
@@ -12,6 +12,7 @@ interface Props {
 
 export function ImageDropzone({ images, onChange, disabled }: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
+  const [dropError, setDropError] = useState<string | null>(null);
 
   async function handleFiles(fileList: FileList | null) {
     if (!fileList) return;
@@ -19,6 +20,12 @@ export function ImageDropzone({ images, onChange, disabled }: Props) {
     const picked = Array.from(fileList).slice(0, room);
     const processed = (await Promise.all(picked.map(processImageFile))).filter(
       (img): img is ProcessedImage => img !== null,
+    );
+    const dropped = picked.length - processed.length;
+    setDropError(
+      dropped > 0
+        ? `Couldn't read ${dropped === 1 ? "that photo" : `${dropped} of those photos`} — try a JPEG or PNG under 5 MB.`
+        : null,
     );
     if (processed.length > 0) onChange([...images, ...processed]);
     if (inputRef.current) inputRef.current.value = "";
@@ -77,6 +84,11 @@ export function ImageDropzone({ images, onChange, disabled }: Props) {
         hidden
         onChange={(e) => handleFiles(e.target.files)}
       />
+      {dropError && (
+        <p role="alert" className="mt-2 text-xs text-clay-deep">
+          {dropError}
+        </p>
+      )}
       <p className="mt-2 text-xs text-ink-soft">
         Up to {MAX_REVIEW_IMAGES} photos. They're resized before upload.
       </p>
