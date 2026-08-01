@@ -156,7 +156,10 @@ export const seedProducts: SeedProduct[] = [
     5,
     14, // TODO: spec sheet says 15″ but the catalog name says 14″ — confirm
     { single: 4900, twin: 5280, queen: 6580, king: 7880 },
-    { hero: "sweet-harm-front.webp" }, // no -hero shot; front is the lead
+    {
+      hero: "sweet-harmony-hero.webp",
+      gallery: ["sweet-harm-front.webp"],
+    },
     "The Harmony is the sweet spot of the range — a 14-inch build that pairs a cushioned top with a steady core at a price that makes it our most recommended bed.\n\nThe feel is a comfortable middle: enough give to cradle shoulders and hips, enough structure that you wake up rested rather than folded.",
     // construction from the spec sheet (foam codes dropped, sizes kept)
     [
@@ -208,7 +211,10 @@ export const seedProducts: SeedProduct[] = [
     7,
     12,
     { single: 2980, twin: 3180, queen: 3980, king: 4780 },
-    { hero: "hot-spi-diagonal.webp" }, // no -hero shot; diagonal is the lead
+    {
+      hero: "hotel-spinal-hero.webp",
+      gallery: ["hot-spi-diagonal.webp"],
+    },
     "The Hotel Spinal is our take on the bed you remember from a good hotel: supportive first, comfortable always — a firmer-side build that stays composed no matter how much the night moves.\n\nIt's a favourite for guest rooms and rentals for the same reason hotels buy this style: it suits nearly everyone who lies on it.",
     // construction from the spec sheet (foam codes dropped, sizes kept)
     [
