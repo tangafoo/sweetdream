@@ -243,7 +243,7 @@ function GlassPanel({
           <button
             type="button"
             onClick={onOpen}
-            className={`rounded-full px-6 py-2.5 text-sm transition-colors ${c.cta}`}
+            className={`cursor-pointer rounded-full px-6 py-2.5 text-sm transition-colors ${c.cta}`}
           >
             Explore this mattress
           </button>
