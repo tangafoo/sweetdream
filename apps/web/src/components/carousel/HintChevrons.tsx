@@ -30,7 +30,14 @@ const STROKES = [
 // opens the show; the bold lead sweep arrives last, closest to the card
 const ENTRANCE_STAGGER_S = 0.5;
 const ENTRANCE_POP_S = 0.6;
-const ENTRANCE_TOTAL_MS = (STROKES.length - 1) * ENTRANCE_STAGGER_S * 1000 + ENTRANCE_POP_S * 1000;
+const DRIFT_LOOP_S = 2;
+
+/** Seconds until the last chevron lands — the cue for the hint-text pulse. */
+export const ENTRANCE_TOTAL_S = (STROKES.length - 1) * ENTRANCE_STAGGER_S + ENTRANCE_POP_S;
+/** Seconds until the second drift loop kicks off — the cue for the card hop. */
+export const SECOND_DRIFT_TICK_S = ENTRANCE_TOTAL_S + DRIFT_LOOP_S;
+
+const ENTRANCE_TOTAL_MS = ENTRANCE_TOTAL_S * 1000;
 
 /**
  * Keycap chip for gesture hints — the daisyUI-style kbd look: hairline
@@ -62,7 +69,7 @@ export function HintPulse({
       className={`inline-block ${className}`}
       animate={{ scale: [1, 1.08, 1] }}
       transition={{
-        delay: ENTRANCE_TOTAL_MS / 1000,
+        delay: ENTRANCE_TOTAL_S,
         duration: 0.6,
         times: [0, 0.45, 1],
         ease: ["easeOut", "easeIn"],
@@ -102,7 +109,7 @@ export function HintChevrons({ dir }: { dir: "up" | "down" }) {
               drifting
                 ? {
                     y: {
-                      duration: 2,
+                      duration: DRIFT_LOOP_S,
                       repeat: Infinity,
                       ease: "easeInOut",
                       delay: i * 0.22,

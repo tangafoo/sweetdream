@@ -7,7 +7,13 @@ import { useEffect, useState } from "react";
 import { ProductImage } from "@/components/media/ProductImage";
 import { ProductName } from "@/components/product/ProductName";
 import { AmbientClouds } from "./AmbientClouds";
-import { HintChevrons, HintPulse, Kbd } from "./HintChevrons";
+import {
+  ENTRANCE_TOTAL_S,
+  HintChevrons,
+  HintPulse,
+  Kbd,
+  SECOND_DRIFT_TICK_S,
+} from "./HintChevrons";
 import { StarRating } from "@/components/reviews/StarRating";
 import { ambientHue } from "@/lib/ambient";
 import { formatPrice } from "@/lib/format";
@@ -114,9 +120,12 @@ function HeavyLift({ lifting, children }: { lifting: boolean; children: React.Re
       animate={lifting ? { y: [0, -10, 0] } : { y: 0 }}
       transition={
         lifting
-          ? // arrows enter ~1.6s, first drift loop runs to ~3.6s — the hop
-            // lands right as the second loop kicks off
-            { delay: 3.6, duration: 0.75, times: [0, 0.45, 1], ease: ["easeOut", "easeIn"] }
+          ? {
+              delay: SECOND_DRIFT_TICK_S,
+              duration: 0.75,
+              times: [0, 0.45, 1],
+              ease: ["easeOut", "easeIn"],
+            }
           : { duration: 0.4, ease: "easeOut" }
       }
     >
@@ -240,12 +249,17 @@ function GlassPanel({
           </button>
           <motion.p
             className={`text-xs ${c.hint}`}
-            // the line swells the moment the third chevron lands (entrance
-            // completes at ~1.6s) — a nudge, not a shout
+            // the line swells the moment the third chevron lands — a nudge,
+            // not a shout
             animate={hintEmphasis ? { scale: [1, 1.08, 1] } : { scale: 1 }}
             transition={
               hintEmphasis
-                ? { delay: 1.6, duration: 0.6, times: [0, 0.45, 1], ease: ["easeOut", "easeIn"] }
+                ? {
+                    delay: ENTRANCE_TOTAL_S,
+                    duration: 0.6,
+                    times: [0, 0.45, 1],
+                    ease: ["easeOut", "easeIn"],
+                  }
                 : { duration: 0.3 }
             }
           >
