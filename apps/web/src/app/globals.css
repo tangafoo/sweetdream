@@ -9,11 +9,10 @@
   --color-ink-soft: #6f665c;
   --color-clay: #a85a32;
   --color-clay-deep: #8a4826;
+  --color-star: #f5a524; /* review stars — vibrant gold, readable on ivory and glass */
 
   --font-display: var(--font-fraunces), "Georgia", serif;
   --font-sans: var(--font-inter), system-ui, sans-serif;
-
-  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 html {
@@ -24,13 +23,62 @@ html {
 
 body {
   overscroll-behavior-x: none;
-}
-
-body {
   background-color: var(--color-ivory);
   color: var(--color-ink);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
+}
+
+/* night sky: deep indigo wash with a scatter of faint stars — the backdrop
+   for the mattress switcher (veil) and the immersive full nav (sky) */
+.night-veil {
+  background:
+    radial-gradient(1px 1px at 12% 22%, rgb(255 255 255 / 0.8), transparent),
+    radial-gradient(1px 1px at 31% 9%, rgb(255 255 255 / 0.5), transparent),
+    radial-gradient(1.5px 1.5px at 48% 30%, rgb(255 255 255 / 0.7), transparent),
+    radial-gradient(1px 1px at 63% 12%, rgb(255 255 255 / 0.6), transparent),
+    radial-gradient(1px 1px at 79% 26%, rgb(255 255 255 / 0.5), transparent),
+    radial-gradient(1.5px 1.5px at 91% 8%, rgb(255 255 255 / 0.65), transparent),
+    radial-gradient(1px 1px at 22% 44%, rgb(255 255 255 / 0.4), transparent),
+    radial-gradient(1px 1px at 71% 47%, rgb(255 255 255 / 0.45), transparent),
+    linear-gradient(to bottom, rgb(7 10 32 / 0.96) 0%, rgb(9 13 40 / 0.78) 40%, rgb(11 16 48 / 0.5) 100%);
+}
+.night-sky {
+  background:
+    radial-gradient(1px 1px at 8% 18%, rgb(255 255 255 / 0.8), transparent),
+    radial-gradient(1px 1px at 24% 7%, rgb(255 255 255 / 0.5), transparent),
+    radial-gradient(1.5px 1.5px at 37% 27%, rgb(255 255 255 / 0.7), transparent),
+    radial-gradient(1px 1px at 52% 11%, rgb(255 255 255 / 0.6), transparent),
+    radial-gradient(1px 1px at 66% 33%, rgb(255 255 255 / 0.45), transparent),
+    radial-gradient(1.5px 1.5px at 78% 6%, rgb(255 255 255 / 0.7), transparent),
+    radial-gradient(1px 1px at 89% 21%, rgb(255 255 255 / 0.55), transparent),
+    radial-gradient(1px 1px at 15% 58%, rgb(255 255 255 / 0.4), transparent),
+    radial-gradient(1px 1px at 45% 71%, rgb(255 255 255 / 0.35), transparent),
+    radial-gradient(1.5px 1.5px at 71% 62%, rgb(255 255 255 / 0.45), transparent),
+    radial-gradient(1px 1px at 93% 79%, rgb(255 255 255 / 0.4), transparent),
+    radial-gradient(120% 90% at 50% 115%, rgb(26 32 78) 0%, transparent 60%),
+    linear-gradient(180deg, #070b22 0%, #0c1236 100%);
+}
+
+/* header logo colorway: the carousel stamps data-stage-dark on <body> while
+   a full-bleed hero photo holds the stage — white wordmark over the photo,
+   ink wordmark over the pale ambient washes */
+.logo-dark {
+  display: none;
+}
+body[data-stage-dark] .logo-light {
+  display: none;
+}
+body[data-stage-dark] .logo-dark {
+  display: block;
+}
+
+/* horizontal strips (the mattress switcher) scroll without a visible bar */
+.no-scrollbar {
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
 }
 
 ::selection {
