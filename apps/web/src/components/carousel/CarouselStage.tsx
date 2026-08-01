@@ -6,7 +6,9 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react
 import { ambientBackground } from "@/lib/ambient";
 import type { ProductSummary } from "@/lib/queries";
 import { DotStrip } from "./DotStrip";
+import { FullNav } from "./FullNav";
 import { ProductSlide } from "./ProductSlide";
+import { QuickNav } from "./QuickNav";
 import { QuickView } from "./QuickView";
 
 const SWIPE_DISTANCE = 80; // px
@@ -19,9 +21,12 @@ export function CarouselStage({ products }: { products: ProductSummary[] }) {
   // False until the initial ?p=/random jump has been applied: while false the
   // track snaps instantly (no N-slide fly-by) and the stage is held invisible.
   const [ready, setReady] = useState(false);
-  // Quick-look bottom sheet: opened by scroll/swipe down; the full product
-  // page is only reached via its "Explore this mattress" CTA.
+  // Vertical ladder, one rung per gesture. Up goes deeper into the product:
+  // quick-look sheet, then the full product page. Down goes wider into
+  // navigation: the switcher strip (level 1), then the immersive full nav
+  // (level 2). The opposite direction steps back; peek and nav never overlap.
   const [peek, setPeek] = useState(false);
+  const [navLevel, setNavLevel] = useState(0);
   const draggingRef = useRef(false);
   const wheelX = useRef(0);
   const wheelY = useRef(0);
@@ -63,8 +68,23 @@ export function CarouselStage({ products }: { products: ProductSummary[] }) {
     [router, products],
   );
 
-  // Arrow keys navigate (also while the sheet is open — quick comparison),
-  // Enter / ↓ opens the quick look, Enter again explores, ↑ / Esc closes.
+  // One rung of the vertical ladder, shared by ↑/↓ keys, wheel, and touch.
+  // Ascend goes deeper into the product (unwind nav → raise the quick look →
+  // open the full page); descend goes wider into navigation (lower the sheet
+  // → switcher → immersive full nav).
+  const ascend = useCallback(() => {
+    if (navLevel > 0) setNavLevel(navLevel - 1);
+    else if (peek) openProduct(index);
+    else setPeek(true);
+  }, [navLevel, peek, index, openProduct]);
+
+  const descend = useCallback(() => {
+    if (peek) setPeek(false);
+    else setNavLevel(Math.min(2, navLevel + 1));
+  }, [peek, navLevel]);
+
+  // Arrow keys navigate (also while an overlay is open — quick comparison).
+  // ↑ / Enter ascends, ↓ descends, Esc returns to neutral.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if ((e.target as HTMLElement | null)?.closest("button, a, input, textarea, select")) {
@@ -76,28 +96,29 @@ export function CarouselStage({ products }: { products: ProductSummary[] }) {
       } else if (e.key === "ArrowRight") {
         e.preventDefault();
         go(index + 1);
-      } else if (e.key === "Enter") {
+      } else if (e.key === "ArrowUp" || e.key === "Enter") {
         e.preventDefault();
-        if (peek) openProduct(index);
-        else setPeek(true);
+        ascend();
       } else if (e.key === "ArrowDown") {
         e.preventDefault();
-        if (peek) openProduct(index);
-        else setPeek(true);
-      } else if (e.key === "ArrowUp" || e.key === "Escape") {
-        if (peek) {
+        descend();
+      } else if (e.key === "Escape") {
+        if (peek || navLevel > 0) {
           e.preventDefault();
           setPeek(false);
+          setNavLevel(0);
         }
       }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [index, peek, go, openProduct]);
+  }, [index, peek, navLevel, go, ascend, descend]);
 
-  // Trackpad/wheel: horizontal intent pages the carousel; downward intent
-  // opens the quick-look sheet; upward intent closes it. (The sheet stops
-  // propagation of its own wheel events, so internal scrolling is unaffected.)
+  // Trackpad/wheel: horizontal intent pages the carousel. Vertical intent is
+  // direct manipulation (matches touch): fingers swiping up (deltaY > 0)
+  // raise the sheet from the bottom — again for the full detail page —
+  // while fingers swiping down (deltaY < 0) pull the nav down from the top.
+  // The opposite motion pushes an overlay back where it came from.
   const onWheel = (e: React.WheelEvent) => {
     const now = performance.now();
     if (now < wheelLockUntil.current) return;
@@ -112,20 +133,18 @@ export function CarouselStage({ products }: { products: ProductSummary[] }) {
     } else if (e.deltaY > 0) {
       wheelY.current += e.deltaY;
       if (wheelY.current > 140) {
+        wheelX.current = 0;
         wheelY.current = 0;
         wheelLockUntil.current = now + 800;
-        // escalate: first scroll-down opens the quick look, the next one
-        // (including scrolling past the end of the sheet's content) goes
-        // to the full detail page. Scroll up dismisses.
-        if (peek) openProduct(index);
-        else setPeek(true);
+        ascend();
       }
     } else if (e.deltaY < 0) {
       wheelY.current += e.deltaY;
-      if (peek && wheelY.current < -120) {
+      if (wheelY.current < -120) {
+        wheelX.current = 0;
         wheelY.current = 0;
         wheelLockUntil.current = now + 800;
-        setPeek(false);
+        descend();
       }
     }
   };
@@ -145,9 +164,10 @@ export function CarouselStage({ products }: { products: ProductSummary[] }) {
     return () => el.removeEventListener("wheel", preventHistorySwipe);
   }, []);
 
-  // Touch: a predominantly-vertical upward swipe opens the quick look (the
-  // track's own drag is x-locked, so this doesn't fight paging). The sheet
-  // stops touch propagation and handles its own drag-down-to-dismiss.
+  // Touch: predominantly-vertical swipes mirror the wheel — up raises the
+  // quick look / full page, down lowers the sheet or opens the switcher.
+  // (The track's own drag is x-locked, so neither fights paging; overlays
+  // stop touch propagation and handle their own gestures.)
   const onTouchStart = (e: React.TouchEvent) => {
     const t = e.touches[0];
     touchStart.current = { x: t.clientX, y: t.clientY };
@@ -159,15 +179,24 @@ export function CarouselStage({ products }: { products: ProductSummary[] }) {
     const t = e.changedTouches[0];
     const dx = t.clientX - start.x;
     const dy = t.clientY - start.y;
-    if (dy < -70 && Math.abs(dy) > Math.abs(dx) * 1.2) {
-      // same escalation as wheel: swipe up opens the quick look, swiping up
-      // again (on the exposed stage above the sheet) opens the full page
-      if (peek) openProduct(index);
-      else setPeek(true);
-    }
+    if (Math.abs(dy) <= Math.abs(dx) * 1.2) return;
+    if (dy < -70) ascend();
+    else if (dy > 70) descend();
   };
 
   const activeSlug = products[index].slug;
+
+  // True only while the active slide is really showing its full-bleed hero
+  // photo — reported by the slide itself, so 404'd heroes that fall back to
+  // the pale layout keep the light chrome.
+  const [heroLive, setHeroLive] = useState(false);
+
+  // Flag the body while a hero photo holds the stage so the fixed header
+  // (outside this tree) can swap to the white logo via CSS.
+  useEffect(() => {
+    document.body.toggleAttribute("data-stage-dark", heroLive);
+    return () => document.body.removeAttribute("data-stage-dark");
+  }, [heroLive]);
 
   return (
     <motion.main
@@ -203,8 +232,12 @@ export function CarouselStage({ products }: { products: ProductSummary[] }) {
         className="relative flex h-full cursor-grab active:cursor-grabbing"
         style={{ touchAction: "pan-y" }}
         drag="x"
-        dragConstraints={{ left: 0, right: 0 }}
-        dragElastic={0.15}
+        // Below-threshold drags must spring back to the CURRENT slide.
+        // (dragConstraints {left:0,right:0} looked equivalent but pinned the
+        // spring target to x=0 — slide 0 — so any tiny no-op drag at index n
+        // silently flew the track back to the first slide while `index`
+        // still said n: the "blank dimmed slide" bug.)
+        dragSnapToOrigin
         onDragStart={() => {
           draggingRef.current = true;
         }}
@@ -232,12 +265,20 @@ export function CarouselStage({ products }: { products: ProductSummary[] }) {
             priority={i === 0}
             onPeek={() => setPeek(true)}
             onOpen={() => openProduct(i)}
+            onHeroLayout={i === index ? setHeroLive : undefined}
           />
         ))}
       </motion.div>
 
-      {/* position counter */}
-      <div className="absolute right-6 top-6 text-sm tabular-nums text-ink-soft md:right-10">
+      {/* position counter — white over full-bleed hero photos, ink over the
+          pale ambient slides; the soft shadow keeps it legible either way */}
+      <div
+        className={`absolute right-6 top-6 text-sm tabular-nums transition-colors duration-500 md:right-10 ${
+          heroLive
+            ? "text-white/80 drop-shadow-[0_1px_4px_rgb(0_0_0/0.45)]"
+            : "text-ink-soft"
+        }`}
+      >
         {String(index + 1).padStart(2, "0")} / {String(products.length).padStart(2, "0")}
       </div>
 
@@ -272,6 +313,28 @@ export function CarouselStage({ products }: { products: ProductSummary[] }) {
         open={peek}
         onClose={() => setPeek(false)}
         onExplore={() => openProduct(index)}
+      />
+
+      <QuickNav
+        products={products}
+        index={index}
+        open={navLevel === 1}
+        onSelect={(i) => {
+          go(i);
+          setNavLevel(0);
+        }}
+        onClose={() => setNavLevel(0)}
+      />
+
+      <FullNav
+        products={products}
+        index={index}
+        open={navLevel === 2}
+        onSelect={(i) => {
+          go(i);
+          setNavLevel(0);
+        }}
+        onClose={() => setNavLevel(0)}
       />
     </motion.main>
   );
