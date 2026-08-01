@@ -278,13 +278,13 @@ function GlassPanel({
 }
 
 /**
- * One slide of the landing carousel, in one of two layouts:
- *
- * - Immersive: when the product's hero photo loads, it fills the entire
- *   viewport edge-to-edge and the title/price/CTA sit in a frosted glass
- *   panel (iOS-style) with white text near the bottom.
- * - Classic: no hero yet (or it 404s) — the hue-gradient placeholder card on
- *   a pedestal glow, ink text on the slide's own ambient wash.
+ * One slide of the landing carousel. The classic layout (hue-gradient
+ * placeholder on a pedestal glow, clouds, ink glass card) renders
+ * immediately as the base of every slide — it needs no network. When the
+ * product's true "-hero" photo loads, the immersive layer (edge-to-edge
+ * photo, dark glass) crossfades in over it; a 404 simply leaves the base
+ * standing. The base enters in steps: placeholder instantly, card next,
+ * clouds last.
  *
  * Each slide is one snap point of the stage's native scroll track and
  * carries its own background, so the atmosphere scrolls with the slide.
@@ -298,26 +298,103 @@ export function ProductSlide({ product, active, near, onPeek, onOpen, onHeroLayo
   const [heroState, setHeroState] = useState<"pending" | "ok" | "failed">(
     heroUrl ? "pending" : "failed",
   );
+  const heroShowing = heroState === "ok";
   const hintPhase = useHintPhase(active, reduceMotion ?? false);
 
+  // Unmount the classic base once the immersive crossfade has finished — no
+  // point compositing a hidden backdrop-blur card under an opaque photo.
+  const [baseGone, setBaseGone] = useState(false);
   useEffect(() => {
-    if (active) onHeroLayout?.(heroState === "ok");
-  }, [active, heroState, onHeroLayout]);
+    if (!heroShowing) {
+      setBaseGone(false);
+      return;
+    }
+    const t = setTimeout(() => setBaseGone(true), 800);
+    return () => clearTimeout(t);
+  }, [heroShowing]);
 
-  if (heroState !== "failed" && heroUrl) {
-    return (
-      <section
-        aria-label={product.name}
-        inert={!active}
-        className="relative h-full w-full shrink-0 snap-center"
-      >
-        {/* the hero floats on an ink backdrop, edges dissolving into the
-            dark. Mobile: a tight square crop — the sides (windows, side
-            tables) are cut so the bed owns the frame. Desktop: subtler —
-            the photo keeps its ~16:9 shape at 90% width, so it still
-            dominates the stage, just with soft edges instead of a hard
-            full-bleed crop. */}
-        <div className="absolute inset-0 bg-ink">
+  useEffect(() => {
+    if (active) onHeroLayout?.(heroShowing);
+  }, [active, heroShowing, onHeroLayout]);
+
+  return (
+    <section
+      aria-label={product.name}
+      inert={!active}
+      className="relative h-full w-full shrink-0 snap-center"
+      // ambient atmosphere travels with its slide
+      style={{ background: ambientBackground(product.slug) }}
+    >
+      {/* ---- classic base: instant, zero-network ---- */}
+      {!baseGone && (
+        <div className="absolute inset-0 flex flex-col items-center justify-center px-6 pb-24 pt-16 md:pb-28 md:pt-20">
+          <AmbientClouds slug={product.slug} active={active && !heroShowing} />
+          <div
+            className={`relative flex w-full flex-col items-center text-center transition-[opacity,transform] duration-500 motion-reduce:transition-none ${
+              active ? "scale-100 opacity-100 delay-100" : "scale-[0.94] opacity-30 delay-0"
+            }`}
+          >
+            {/* pedestal glow: soft blurred halo in the product's ambient hue */}
+            <div
+              aria-hidden
+              className="pointer-events-none absolute left-1/2 top-[6%] -z-10 h-[52%] w-[82%] max-w-2xl -translate-x-1/2 rounded-full blur-3xl"
+              style={{
+                background: `radial-gradient(closest-side, hsl(${hue} 42% 68% / 0.4), transparent 72%)`,
+              }}
+            />
+
+            <button
+              type="button"
+              onClick={onPeek}
+              aria-label={`Quick look at ${product.name}`}
+              className="group pointer-events-none relative block aspect-[16/10] max-h-[36dvh] w-full max-w-3xl md:pointer-events-auto md:max-h-[46dvh]"
+            >
+              <ProductImage
+                imageKey={product.heroImageKey}
+                alt={product.name}
+                sizes="(min-width: 768px) 768px, 100vw"
+                priority={!heroUrl && active}
+                loading={near ? "eager" : "lazy"}
+                // when a -hero key exists, the immersive layer owns the photo
+                // load — the base is placeholder-art only (no duplicate fetch,
+                // no second 404 on missing heroes)
+                placeholderOnly={heroUrl !== null}
+                placeholderClassName="rounded-3xl shadow-[0_30px_80px_-30px_rgb(28_23_19/0.35)]"
+                className="transition-transform duration-700 ease-out group-hover:scale-[1.03]"
+              />
+            </button>
+
+            <UpArrowSlot
+              show={hintPhase === "up" && !heroShowing}
+              className="hidden text-ink-soft md:flex"
+            />
+            {/* light frosted twin of the hero's dark glass — its backdrop-blur
+                frosts the clouds behind it */}
+            <HeavyLift lifting={hintPhase === "up" && !heroShowing}>
+              <GlassPanel
+                product={product}
+                active={active}
+                onOpen={onOpen}
+                className="mt-6 md:mt-0"
+                hintEmphasis={hintPhase === "up" && !heroShowing}
+              />
+            </HeavyLift>
+            <UpArrowSlot
+              show={hintPhase === "up" && !heroShowing}
+              className="mt-2 text-ink-soft md:hidden"
+            />
+          </div>
+        </div>
+      )}
+
+      {/* ---- immersive layer: crossfades in over the base when the hero
+              photo actually arrives ---- */}
+      {heroUrl && heroState !== "failed" && (
+        <div
+          className={`absolute inset-0 bg-ink transition-opacity duration-700 motion-reduce:transition-none ${
+            heroShowing ? "opacity-100" : "pointer-events-none opacity-0"
+          }`}
+        >
           {/* the hero IS the stage: tap anywhere on it for a quick look */}
           {/* tap-to-peek is desktop-only: on touch it fired on every stray
               tap between swipes, fighting the slide/scroll gestures */}
@@ -338,9 +415,7 @@ export function ProductSlide({ product, active, near, onPeek, onOpen, onHeroLayo
               priority={active}
               loading={active ? undefined : near ? "eager" : "lazy"}
               draggable={false}
-              className={`object-cover transition-opacity duration-700 ${
-                heroState === "ok" ? "opacity-100" : "opacity-0"
-              }`}
+              className="object-cover"
               onLoad={() => setHeroState("ok")}
               onError={() => setHeroState("failed")}
             />
@@ -387,82 +462,29 @@ export function ProductSlide({ product, active, near, onPeek, onOpen, onHeroLayo
           />
 
           <div className="pointer-events-none absolute inset-x-0 bottom-0 flex flex-col items-center px-4 pb-12 md:px-6 md:pb-24">
-            <UpArrowSlot show={hintPhase === "up"} className="hidden text-white/80 md:flex" />
-            <HeavyLift lifting={hintPhase === "up"}>
+            <UpArrowSlot
+              show={hintPhase === "up" && heroShowing}
+              className="hidden text-white/80 md:flex"
+            />
+            <HeavyLift lifting={hintPhase === "up" && heroShowing}>
               <GlassPanel
                 product={product}
                 dark
                 active={active}
                 onOpen={onOpen}
                 className="pointer-events-auto"
-                hintEmphasis={hintPhase === "up"}
+                hintEmphasis={hintPhase === "up" && heroShowing}
               />
             </HeavyLift>
-            <UpArrowSlot show={hintPhase === "up"} className="text-white/80 md:hidden" />
+            <UpArrowSlot
+              show={hintPhase === "up" && heroShowing}
+              className="text-white/80 md:hidden"
+            />
           </div>
-
-          <DownHint show={hintPhase === "down"} dark />
         </div>
-      </section>
-    );
-  }
+      )}
 
-  return (
-    <section
-      aria-label={product.name}
-      inert={!active}
-      className="relative flex h-full w-full shrink-0 snap-center flex-col items-center justify-center px-6 pb-24 pt-16 md:pb-28 md:pt-20"
-      // ambient atmosphere travels with its slide
-      style={{ background: ambientBackground(product.slug) }}
-    >
-      <AmbientClouds slug={product.slug} active={active} />
-      <div
-        className={`relative flex w-full flex-col items-center text-center transition-[opacity,transform] duration-500 motion-reduce:transition-none ${
-          active ? "scale-100 opacity-100" : "scale-[0.94] opacity-30"
-        }`}
-      >
-        {/* pedestal glow: soft blurred halo in the product's ambient hue */}
-        <div
-          aria-hidden
-          className="pointer-events-none absolute left-1/2 top-[6%] -z-10 h-[52%] w-[82%] max-w-2xl -translate-x-1/2 rounded-full blur-3xl"
-          style={{
-            background: `radial-gradient(closest-side, hsl(${hue} 42% 68% / 0.4), transparent 72%)`,
-          }}
-        />
-
-        <button
-          type="button"
-          onClick={onPeek}
-          aria-label={`Quick look at ${product.name}`}
-          className="group pointer-events-none relative block aspect-[16/10] max-h-[36dvh] w-full max-w-3xl md:pointer-events-auto md:max-h-[46dvh]"
-        >
-          <ProductImage
-            imageKey={product.heroImageKey}
-            alt={product.name}
-            sizes="(min-width: 768px) 768px, 100vw"
-            priority={active}
-            loading={near ? "eager" : "lazy"}
-            placeholderClassName="rounded-3xl shadow-[0_30px_80px_-30px_rgb(28_23_19/0.35)]"
-            className="transition-transform duration-700 ease-out group-hover:scale-[1.03]"
-          />
-        </button>
-
-        <UpArrowSlot show={hintPhase === "up"} className="hidden text-ink-soft md:flex" />
-        {/* light frosted twin of the hero's dark glass — its backdrop-blur
-            frosts the clouds behind it */}
-        <HeavyLift lifting={hintPhase === "up"}>
-          <GlassPanel
-            product={product}
-            active={active}
-            onOpen={onOpen}
-            className="mt-6 md:mt-0"
-            hintEmphasis={hintPhase === "up"}
-          />
-        </HeavyLift>
-        <UpArrowSlot show={hintPhase === "up"} className="mt-2 text-ink-soft md:hidden" />
-      </div>
-
-      <DownHint show={hintPhase === "down"} dark={false} />
+      <DownHint show={hintPhase === "down"} dark={heroShowing} />
     </section>
   );
 }
