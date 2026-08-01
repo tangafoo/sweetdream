@@ -119,8 +119,12 @@ export function AmbientClouds({ slug, active }: { slug: string; active: boolean 
   return (
     <div
       aria-hidden
+      // the enter delay makes the clouds the LAST act of a slide's staged
+      // entrance — the glass card must be fully opaque before anything dark
+      // blooms behind it, or the translucent card reads as sitting behind
+      // the clouds. Leaving is immediate (delay only applies on activate).
       className={`pointer-events-none absolute inset-x-0 bottom-0 h-[26dvh] overflow-hidden transition-opacity duration-700 motion-reduce:transition-none md:h-[32dvh] ${
-        active ? "opacity-100" : "opacity-0"
+        active ? "opacity-100 delay-500" : "opacity-0 delay-0"
       }`}
     >
       <div

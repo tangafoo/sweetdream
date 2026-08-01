@@ -12,6 +12,12 @@ interface Props {
   priority?: boolean;
   /** Ignored when priority is set (Next forbids priority + lazy). */
   loading?: "eager" | "lazy";
+  /**
+   * Render the designed placeholder without ever fetching the image — for
+   * layers that want the placeholder look while another element owns the
+   * actual photo load (avoids duplicate optimizer requests).
+   */
+  placeholderOnly?: boolean;
   className?: string;
   /** contain (default) never crops the mattress; cover fills the box. */
   fit?: "contain" | "cover";
@@ -44,6 +50,7 @@ export function ProductImage({
   sizes,
   priority,
   loading,
+  placeholderOnly = false,
   className = "",
   fit = "contain",
   placeholderClassName = "",
@@ -51,7 +58,7 @@ export function ProductImage({
   const [errored, setErrored] = useState(false);
   const url = imageUrl(imageKey);
 
-  if (!url || errored) {
+  if (!url || errored || placeholderOnly) {
     const { h, s } = toneFromKey(imageKey);
     return (
       <div
