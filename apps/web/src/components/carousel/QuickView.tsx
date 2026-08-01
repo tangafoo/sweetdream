@@ -3,6 +3,7 @@
 import { AnimatePresence, motion, useDragControls, useReducedMotion } from "motion/react";
 import { useRef } from "react";
 import { PriceBySize } from "@/components/product/PriceBySize";
+import { ProductName } from "@/components/product/ProductName";
 import { StarRating } from "@/components/reviews/StarRating";
 import type { ProductSummary } from "@/lib/queries";
 
@@ -85,7 +86,9 @@ export function QuickView({ product, open, onClose, onExplore }: Props) {
 
             <div ref={scrollRef} className="max-h-[62dvh] overflow-y-auto px-6 pb-7 md:px-8">
               <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-                <h3 className="font-display text-3xl tracking-tight">{product.name}</h3>
+                <h3 className="font-display text-3xl tracking-tight">
+                  <ProductName name={product.name} />
+                </h3>
                 <StarRating rating={product.avgRating} count={product.reviewCount} />
               </div>
               <p className="mt-1 text-ink-soft">{product.tagline}</p>
@@ -118,7 +121,7 @@ export function QuickView({ product, open, onClose, onExplore }: Props) {
                 onClick={onExplore}
                 className="mt-6 w-full rounded-full bg-ink px-6 py-3.5 text-sm text-ivory transition-opacity hover:opacity-90"
               >
-                Explore this mattress
+                Explore
               </button>
               <p className="mt-2 text-center text-xs text-ink-soft">
                 Full gallery, measurements &amp; reviews
