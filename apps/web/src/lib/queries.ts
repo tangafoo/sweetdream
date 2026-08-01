@@ -43,6 +43,12 @@ function fromSeed(): ProductSummary[] {
   }));
 }
 
+/** Seed-data stand-in for a single product page (no reviews to show). */
+function seedFallback(slug: string): { product: ProductSummary; reviews: ReviewDTO[] } | null {
+  const seed = fromSeed().find((p) => p.slug === slug);
+  return seed ? { product: seed, reviews: [] } : null;
+}
+
 let warnedFallback = false;
 function warnFallback(err: unknown) {
   if (warnedFallback) return;
@@ -140,17 +146,11 @@ export async function getProductBySlug(
       // (migrated-but-not-seeded — the list views fall back to seed data, so
       // product links must resolve too or they'd all 404).
       const count = await prisma.product.count();
-      if (count === 0) {
-        const seed = fromSeed().find((s) => s.slug === slug);
-        return seed ? { product: seed, reviews: [] } : null;
-      }
+      if (count === 0) return seedFallback(slug);
       return null;
     }
     const fields = productFields(p);
-    if (!fields) {
-      const seed = fromSeed().find((s) => s.slug === slug);
-      return seed ? { product: seed, reviews: [] } : null;
-    }
+    if (!fields) return seedFallback(slug);
     const ratings = p.reviews.map((r) => r.rating);
     const avgRating = ratings.length
       ? ratings.reduce((a, b) => a + b, 0) / ratings.length
@@ -172,7 +172,6 @@ export async function getProductBySlug(
     };
   } catch (err) {
     warnFallback(err);
-    const seed = fromSeed().find((p) => p.slug === slug);
-    return seed ? { product: seed, reviews: [] } : null;
+    return seedFallback(slug);
   }
 }

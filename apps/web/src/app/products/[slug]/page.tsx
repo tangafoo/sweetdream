@@ -97,7 +97,12 @@ export default async function ProductPage({
         <div className="lg:sticky lg:top-24 lg:self-start">
           <Gallery
             name={product.name}
-            imageKeys={[product.heroImageKey, ...product.galleryImageKeys]}
+            // hand-edited rows sometimes repeat the hero in the gallery list;
+            // keys must stay unique (they're React keys in the thumbnails)
+            imageKeys={[
+              product.heroImageKey,
+              ...product.galleryImageKeys.filter((k) => k !== product.heroImageKey),
+            ]}
           />
         </div>
 
