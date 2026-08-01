@@ -1,7 +1,7 @@
 {
   "name": "sd-2026",
   "private": true,
-  "packageManager": "pnpm@10.9.0",
+  "packageManager": "pnpm@11.18.0",
   "engines": {
     "node": ">=20"
   },
@@ -16,14 +16,5 @@
   },
   "devDependencies": {
     "turbo": "^2.5.0"
-  },
-  "pnpm": {
-    "onlyBuiltDependencies": [
-      "@prisma/client",
-      "@prisma/engines",
-      "esbuild",
-      "prisma",
-      "sharp"
-    ]
   }
 }
