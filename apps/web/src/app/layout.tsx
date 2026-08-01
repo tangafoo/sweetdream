@@ -24,7 +24,7 @@ export const metadata: Metadata = {
     template: "%s — sweetdream",
   },
   description:
-    "Fourteen mattresses, obsessively engineered. Browse the collection, compare feels, and read real reviews.",
+    "Mattresses obsessively engineered for deep sleep. Browse the collection, compare feels, and read real reviews.",
 };
 
 export const viewport: Viewport = {

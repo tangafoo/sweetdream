@@ -3,7 +3,6 @@
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import Image from "next/image";
 import Link from "next/link";
-import { useRef } from "react";
 import { ProductImage } from "@/components/media/ProductImage";
 import { ProductName } from "@/components/product/ProductName";
 import { imageUrl, navImageKey } from "@/lib/images";
@@ -26,7 +25,6 @@ interface Props {
  */
 export function FullNav({ products, index, open, onSelect, onClose }: Props) {
   const reduceMotion = useReducedMotion();
-  const scrollRef = useRef<HTMLDivElement>(null);
   const darkLogo = imageUrl("sd-logo-darktheme.webp");
 
   return (
@@ -62,7 +60,6 @@ export function FullNav({ products, index, open, onSelect, onClose }: Props) {
           </button>
 
           <motion.div
-            ref={scrollRef}
             className="h-full overflow-y-auto overscroll-contain px-6 pb-14 pt-16 md:px-10"
             style={{ touchAction: "pan-y" }}
             initial={{ y: reduceMotion ? 0 : 26 }}
