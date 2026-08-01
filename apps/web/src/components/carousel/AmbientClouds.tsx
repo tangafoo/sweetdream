@@ -76,20 +76,6 @@ function layerFills(h: number, s: number): string[] {
   ];
 }
 
-/**
- * Moonlit variant for the ink-backed hero slides: the day fills are dark
- * shapes on a pale sky; against near-black they'd vanish, so dusk banks are
- * pale and faintly luminous instead — brightest in front.
- */
-function duskFills(h: number, s: number): string[] {
-  const soft = Math.min(s + 8, 45);
-  return [
-    `hsl(${h + 6} ${soft}% 74% / 0.12)`,
-    `hsl(${h + 14} ${soft}% 64% / 0.16)`,
-    `hsl(${h + 22} ${soft}% 52% / 0.22)`,
-  ];
-}
-
 // Film-strip fade: one smooth horizontal ramp — soft at both ends, full
 // strength around the lower corners, dipping to a faint presence mid-stage
 // so the content stays clear. No plateaus, no hard zones, no visible seams.
@@ -155,19 +141,10 @@ function CloudBank({
  * breathing behind it. The bank only exists while its slide holds the stage:
  * it blooms in from blank once the paging spring settles.
  */
-export function AmbientClouds({
-  slug,
-  active,
-  tone = "day",
-}: {
-  slug: string;
-  active: boolean;
-  /** "dusk" renders the pale moonlit fills for ink-backed hero slides. */
-  tone?: "day" | "dusk";
-}) {
+export function AmbientClouds({ slug, active }: { slug: string; active: boolean }) {
   const reduceMotion = useReducedMotion() ?? false;
   const { h, s } = ambientTone(slug);
-  const fills = tone === "dusk" ? duskFills(h, s) : layerFills(h, s);
+  const fills = layerFills(h, s);
 
   return (
     <div

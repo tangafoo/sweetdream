@@ -390,10 +390,6 @@ export function ProductSlide({ product, active, priority, onPeek, onOpen, onHero
             transition={{ duration: 0.5, ease: EASE }}
           />
 
-          {/* moonlit cloud banks drift through the ink beneath the photo —
-              the card's backdrop-blur frosts them as they pass behind it */}
-          <AmbientClouds slug={product.slug} active={active} tone="dusk" />
-
           <div className="pointer-events-none absolute inset-x-0 bottom-0 flex flex-col items-center px-4 pb-12 md:px-6 md:pb-24">
             <UpArrowSlot show={hintPhase === "up"} className="hidden text-white/80 md:flex" />
             <HeavyLift lifting={hintPhase === "up"}>
