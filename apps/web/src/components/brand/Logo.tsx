@@ -1,27 +1,47 @@
+import Image from "next/image";
 import Link from "next/link";
+import { imageUrl } from "@/lib/images";
 
 /**
- * PLACEHOLDER LOGO — swap the SVG mark + wordmark for the real brand asset.
- * Everything routes through this one component.
+ * Brand wordmark — "SweetDream, take a rest" with the shooting-star swoosh,
+ * served from the R2 bucket like every other image. Renders both colorways;
+ * globals.css shows the white artwork whenever the carousel flags the body
+ * with `data-stage-dark` (a full-bleed hero photo holding the stage) and the
+ * ink artwork otherwise. Falls back to a text wordmark when no bucket is
+ * configured. Everything routes through this one component.
  */
 export function Logo({ className = "" }: { className?: string }) {
+  const light = imageUrl("sd-logo.webp");
+  const dark = imageUrl("sd-logo-darktheme.webp");
+
   return (
     <Link
       href="/"
-      aria-label="sweetdream — home"
-      className={`group inline-flex items-center gap-2.5 text-ink ${className}`}
+      aria-label="SweetDream — home"
+      className={`inline-flex items-center transition-opacity hover:opacity-80 ${className}`}
     >
-      <svg
-        viewBox="0 0 32 32"
-        aria-hidden="true"
-        className="h-7 w-7 transition-transform duration-500 group-hover:-rotate-12"
-      >
-        <path
-          d="M21.5 4.5a12 12 0 1 0 6 16.5A10 10 0 1 1 21.5 4.5Z"
-          fill="currentColor"
-        />
-      </svg>
-      <span className="font-display text-xl tracking-tight">sweetdream</span>
+      {light && dark ? (
+        <>
+          <Image
+            src={light}
+            alt="SweetDream — Take a rest"
+            width={700}
+            height={252}
+            priority
+            className="logo-light h-11 w-auto md:h-12"
+          />
+          <Image
+            src={dark}
+            alt="SweetDream — Take a rest"
+            width={700}
+            height={264}
+            priority
+            className="logo-dark h-11 w-auto md:h-12"
+          />
+        </>
+      ) : (
+        <span className="font-display text-xl tracking-tight">sweetdream</span>
+      )}
     </Link>
   );
 }
