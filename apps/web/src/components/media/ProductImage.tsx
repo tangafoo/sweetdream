@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { useState } from "react";
+import { toneHash } from "@/lib/ambient";
 import { imageUrl } from "@/lib/images";
 
 interface Props {
@@ -23,10 +24,7 @@ interface Props {
 // Placeholder tones stay inside the brand's grey→blue family, but vary in
 // strength per key — some near-neutral, some clearly blue (colorblocked).
 function toneFromKey(key: string): { h: number; s: number } {
-  let n = 0;
-  for (let i = 0; i < key.length; i++) {
-    n = (n * 31 + key.charCodeAt(i)) % 100000;
-  }
+  const n = toneHash(key);
   return { h: 198 + (n % 42), s: 10 + ((n >> 3) % 30) };
 }
 

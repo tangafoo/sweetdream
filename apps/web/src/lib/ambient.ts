@@ -26,12 +26,19 @@ const TONES: Record<string, Tone> = {
   "royal-blue-emporium": { h: 236, s: 40, l: 80 }, // deep indigo-slate
 };
 
+/** Deterministic 0–99999 hash — the seed for every derived tone (ambient
+ * washes here, image placeholders in ProductImage). */
+export function toneHash(str: string): number {
+  let n = 0;
+  for (let i = 0; i < str.length; i++) {
+    n = (n * 31 + str.charCodeAt(i)) % 100000;
+  }
+  return n;
+}
+
 /** Deterministic fallback for slugs not in the hand-tuned map — grey→blue only. */
 function hashTone(slug: string): Tone {
-  let n = 0;
-  for (let i = 0; i < slug.length; i++) {
-    n = (n * 31 + slug.charCodeAt(i)) % 100000;
-  }
+  const n = toneHash(slug);
   return { h: 198 + (n % 42), s: 8 + ((n >> 3) % 38), l: 84 + ((n >> 7) % 7) };
 }
 
