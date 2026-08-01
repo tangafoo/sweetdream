@@ -10,6 +10,8 @@ interface Props {
   alt: string;
   sizes?: string;
   priority?: boolean;
+  /** Ignored when priority is set (Next forbids priority + lazy). */
+  loading?: "eager" | "lazy";
   className?: string;
   /** contain (default) never crops the mattress; cover fills the box. */
   fit?: "contain" | "cover";
@@ -41,6 +43,7 @@ export function ProductImage({
   alt,
   sizes,
   priority,
+  loading,
   className = "",
   fit = "contain",
   placeholderClassName = "",
@@ -86,6 +89,7 @@ export function ProductImage({
       fill
       sizes={sizes}
       priority={priority}
+      loading={priority ? undefined : loading}
       className={`${fit === "cover" ? "object-cover" : "object-contain"} ${className}`}
       onError={() => setErrored(true)}
     />

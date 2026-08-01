@@ -1,11 +1,15 @@
 "use client";
 
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import type { MotionProps } from "motion/react";
 import Image from "next/image";
 import { useEffect, useState } from "react";
 import { ProductImage } from "@/components/media/ProductImage";
 import { ProductName } from "@/components/product/ProductName";
+import { StarRating } from "@/components/reviews/StarRating";
+import { ambientBackground, ambientHue } from "@/lib/ambient";
+import { formatPrice } from "@/lib/format";
+import { imageUrl, isHeroShot } from "@/lib/images";
+import type { ProductSummary } from "@/lib/queries";
 import { AmbientClouds } from "./AmbientClouds";
 import {
   ENTRANCE_TOTAL_S,
@@ -14,16 +18,12 @@ import {
   Kbd,
   SECOND_DRIFT_TICK_S,
 } from "./HintChevrons";
-import { StarRating } from "@/components/reviews/StarRating";
-import { ambientHue } from "@/lib/ambient";
-import { formatPrice } from "@/lib/format";
-import { imageUrl, isHeroShot } from "@/lib/images";
-import type { ProductSummary } from "@/lib/queries";
 
 interface Props {
   product: ProductSummary;
   active: boolean;
-  priority?: boolean;
+  /** Within one slide of the viewport — heroes load eagerly, the rest lazily. */
+  near: boolean;
   /** Open the quick-look sheet (image tap, swipe up). */
   onPeek: () => void;
   /** Navigate to the full product page ("Explore this mattress"). */
@@ -36,8 +36,6 @@ interface Props {
    */
   onHeroLayout?: (heroVisible: boolean) => void;
 }
-
-const EASE = [0.16, 1, 0.3, 1] as const;
 
 type HintPhase = "idle" | "up" | "down";
 
@@ -173,22 +171,21 @@ function useHintPhase(active: boolean, reduceMotion: boolean): HintPhase {
 /**
  * The frosted glass card holding a slide's name/price/CTA, in two colorways:
  * dark (over a hero photo, white text) and light (over the ambient wash, ink
- * text). One motion unit with plain children — nested staggered fades under a
- * backdrop-blur element shimmer, so the card must rise as a whole.
+ * text). Rises in on a CSS transition when its slide takes the stage.
  */
 function GlassPanel({
   product,
   dark = false,
+  active,
   onOpen,
   className = "",
-  enter,
   hintEmphasis = false,
 }: {
   product: ProductSummary;
   dark?: boolean;
+  active: boolean;
   onOpen: () => void;
   className?: string;
-  enter: MotionProps;
   /** True during the up-hint phase — the hint line pulses with the card hop. */
   hintEmphasis?: boolean;
 }) {
@@ -197,28 +194,21 @@ function GlassPanel({
     ? {
         panel: "border-white/25 bg-ink/25 text-white shadow-[0_20px_60px_-20px_rgb(0_0_0/0.5)]",
         soft: "text-white/80",
-        muted: "text-white/70",
         cta: "bg-white/90 text-ink hover:bg-white",
         hint: "text-white/60",
       }
     : {
         panel: "border-white/50 bg-white/35 shadow-[0_20px_60px_-20px_rgb(28_23_19/0.3)]",
         soft: "text-ink-soft",
-        muted: "text-ink-soft",
         cta: "border border-ink/20 bg-ivory/60 hover:bg-ink hover:text-ivory",
         hint: "text-ink-soft",
       };
 
   return (
-    <motion.div
-      {...enter}
-      // mouse pointer-downs stop here so the track's drag doesn't swallow
-      // them — that's what makes the panel text selectable on desktop.
-      // Touch still bubbles through and swipes the carousel as usual.
-      onPointerDownCapture={(e) => {
-        if (e.pointerType === "mouse") e.stopPropagation();
-      }}
-      className={`w-full max-w-xl cursor-auto select-text rounded-3xl border px-6 py-6 text-center backdrop-blur-2xl md:max-w-2xl md:px-8 md:py-6 ${c.panel} ${className}`}
+    <div
+      className={`w-full max-w-xl select-text rounded-3xl border px-6 py-6 text-center backdrop-blur-2xl transition-all duration-500 ease-out motion-reduce:transition-none md:max-w-2xl md:px-8 md:py-6 ${
+        active ? "translate-y-0 opacity-100" : "translate-y-2 opacity-0"
+      } ${c.panel} ${className}`}
     >
       <h2 className="font-display text-3xl tracking-tight md:text-5xl">
         <ProductName name={product.name} />
@@ -283,7 +273,7 @@ function GlassPanel({
           </motion.p>
         </div>
       </div>
-    </motion.div>
+    </div>
   );
 }
 
@@ -294,9 +284,12 @@ function GlassPanel({
  *   viewport edge-to-edge and the title/price/CTA sit in a frosted glass
  *   panel (iOS-style) with white text near the bottom.
  * - Classic: no hero yet (or it 404s) — the hue-gradient placeholder card on
- *   a pedestal glow, ink text on the ambient wash.
+ *   a pedestal glow, ink text on the slide's own ambient wash.
+ *
+ * Each slide is one snap point of the stage's native scroll track and
+ * carries its own background, so the atmosphere scrolls with the slide.
  */
-export function ProductSlide({ product, active, priority, onPeek, onOpen, onHeroLayout }: Props) {
+export function ProductSlide({ product, active, near, onPeek, onOpen, onHeroLayout }: Props) {
   const reduceMotion = useReducedMotion();
   const hue = ambientHue(product.slug);
   // Only a true "-hero" shot earns the immersive full-bleed treatment;
@@ -311,21 +304,12 @@ export function ProductSlide({ product, active, priority, onPeek, onOpen, onHero
     if (active) onHeroLayout?.(heroState === "ok");
   }, [active, heroState, onHeroLayout]);
 
-  // Text block softly rises in when the slide takes the stage.
-  const enter = (delay: number): MotionProps => ({
-    initial: { opacity: 0, y: 10 },
-    animate: { opacity: active ? 1 : 0, y: active ? 0 : 10 },
-    transition: reduceMotion
-      ? { duration: 0 }
-      : { duration: 0.45, ease: EASE, delay: active ? delay : 0 },
-  });
-
   if (heroState !== "failed" && heroUrl) {
     return (
       <section
         aria-label={product.name}
         inert={!active}
-        className="relative h-full min-w-full"
+        className="relative h-full w-full shrink-0 snap-center"
       >
         {/* the hero floats on an ink backdrop, edges dissolving into the
             dark. Mobile: a tight square crop — the sides (windows, side
@@ -348,11 +332,11 @@ export function ProductSlide({ product, active, priority, onPeek, onOpen, onHero
               alt={product.name}
               fill
               sizes="100vw"
-              priority={priority}
-              // hero slides sit far off-viewport in the translated track, so
-              // default lazy loading only kicks in mid-swipe — a visible flash
-              // of ambient hue before the photo fades in. Load them up front.
-              loading={priority ? undefined : "eager"}
+              // the landed slide fetches at highest priority; its neighbors
+              // load eagerly so a swipe never lands on a blank; the rest wait
+              // until the scroll position brings them near.
+              priority={active}
+              loading={active ? undefined : near ? "eager" : "lazy"}
               draggable={false}
               className={`object-cover transition-opacity duration-700 ${
                 heroState === "ok" ? "opacity-100" : "opacity-0"
@@ -394,14 +378,12 @@ export function ProductSlide({ product, active, priority, onPeek, onOpen, onHero
           </button>
 
           {/* inactive dim: a scrim over the photo, never photo transparency —
-              fading the photo itself lets the ambient hue bleed through
-              mid-swipe, a visible flash between adjacent hero slides */}
-          <motion.div
+              fading the photo itself would flash the ink backdrop mid-swipe */}
+          <div
             aria-hidden
-            className="pointer-events-none absolute inset-0 bg-ink"
-            initial={false}
-            animate={{ opacity: active ? 0 : 0.45 }}
-            transition={{ duration: 0.5, ease: EASE }}
+            className={`pointer-events-none absolute inset-0 bg-ink transition-opacity duration-500 ${
+              active ? "opacity-0" : "opacity-45"
+            }`}
           />
 
           <div className="pointer-events-none absolute inset-x-0 bottom-0 flex flex-col items-center px-4 pb-12 md:px-6 md:pb-24">
@@ -410,8 +392,8 @@ export function ProductSlide({ product, active, priority, onPeek, onOpen, onHero
               <GlassPanel
                 product={product}
                 dark
+                active={active}
                 onOpen={onOpen}
-                enter={enter(0.06)}
                 className="pointer-events-auto"
                 hintEmphasis={hintPhase === "up"}
               />
@@ -429,13 +411,15 @@ export function ProductSlide({ product, active, priority, onPeek, onOpen, onHero
     <section
       aria-label={product.name}
       inert={!active}
-      className="relative flex h-full min-w-full flex-col items-center justify-center px-6 pb-24 pt-16 md:pb-28 md:pt-20"
+      className="relative flex h-full w-full shrink-0 snap-center flex-col items-center justify-center px-6 pb-24 pt-16 md:pb-28 md:pt-20"
+      // ambient atmosphere travels with its slide
+      style={{ background: ambientBackground(product.slug) }}
     >
       <AmbientClouds slug={product.slug} active={active} />
-      <motion.div
-        animate={{ opacity: active ? 1 : 0.3, scale: active ? 1 : 0.94 }}
-        transition={{ duration: 0.5, ease: EASE }}
-        className="relative flex w-full flex-col items-center text-center"
+      <div
+        className={`relative flex w-full flex-col items-center text-center transition-[opacity,transform] duration-500 motion-reduce:transition-none ${
+          active ? "scale-100 opacity-100" : "scale-[0.94] opacity-30"
+        }`}
       >
         {/* pedestal glow: soft blurred halo in the product's ambient hue */}
         <div
@@ -456,7 +440,8 @@ export function ProductSlide({ product, active, priority, onPeek, onOpen, onHero
             imageKey={product.heroImageKey}
             alt={product.name}
             sizes="(min-width: 768px) 768px, 100vw"
-            priority={priority}
+            priority={active}
+            loading={near ? "eager" : "lazy"}
             placeholderClassName="rounded-3xl shadow-[0_30px_80px_-30px_rgb(28_23_19/0.35)]"
             className="transition-transform duration-700 ease-out group-hover:scale-[1.03]"
           />
@@ -464,18 +449,18 @@ export function ProductSlide({ product, active, priority, onPeek, onOpen, onHero
 
         <UpArrowSlot show={hintPhase === "up"} className="hidden text-ink-soft md:flex" />
         {/* light frosted twin of the hero's dark glass — its backdrop-blur
-            frosts the clouds drifting behind it */}
+            frosts the clouds behind it */}
         <HeavyLift lifting={hintPhase === "up"}>
           <GlassPanel
             product={product}
+            active={active}
             onOpen={onOpen}
-            enter={enter(0.08)}
             className="mt-6 md:mt-0"
             hintEmphasis={hintPhase === "up"}
           />
         </HeavyLift>
         <UpArrowSlot show={hintPhase === "up"} className="mt-2 text-ink-soft md:hidden" />
-      </motion.div>
+      </div>
 
       <DownHint show={hintPhase === "down"} dark={false} />
     </section>
