@@ -1,10 +1,16 @@
+import { readFile } from "node:fs/promises";
+import { join } from "node:path";
 import { ImageResponse } from "next/og";
 
 export const alt = "sweetdream — Mattresses made for deep sleep";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
-export default function OpenGraphImage() {
+export default async function OpenGraphImage() {
+  // satori can't rasterize webp, so this route keeps its own PNG of the
+  // star mark colocated in src/app rather than pulling from the R2 bucket.
+  const icon = await readFile(join(process.cwd(), "src/app/sd-star-icon.png"));
+
   return new ImageResponse(
     (
       <div
@@ -20,10 +26,14 @@ export default function OpenGraphImage() {
           fontFamily: "Georgia, serif",
         }}
       >
-        <svg width="72" height="72" viewBox="0 0 32 32">
-          <path d="M21.5 4.5a12 12 0 1 0 6 16.5A10 10 0 1 1 21.5 4.5Z" fill="#1c1713" />
-        </svg>
-        <div style={{ fontSize: 92, marginTop: 24, letterSpacing: -2 }}>sweetdream</div>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={`data:image/png;base64,${icon.toString("base64")}`}
+          width={96}
+          height={95}
+          alt=""
+        />
+        <div style={{ fontSize: 92, marginTop: 24, letterSpacing: -2 }}>SweetDream</div>
         <div style={{ fontSize: 30, marginTop: 12, color: "#6f665c" }}>
           Mattresses made for deep sleep
         </div>
