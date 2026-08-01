@@ -177,6 +177,7 @@ function GlassPanel({
   product,
   dark = false,
   active,
+  frost,
   onOpen,
   className = "",
   hintEmphasis = false,
@@ -184,6 +185,13 @@ function GlassPanel({
   product: ProductSummary;
   dark?: boolean;
   active: boolean;
+  /**
+   * Whether this panel gets a real backdrop-filter. Safari pays dearly for
+   * every mounted backdrop-blur (Chromium doesn't), so only near-viewport
+   * slides frost; far slides use a more opaque plain fill that reads the
+   * same and can never be seen mid-swipe anyway.
+   */
+  frost: boolean;
   onOpen: () => void;
   className?: string;
   /** True during the up-hint phase — the hint line pulses with the card hop. */
@@ -192,13 +200,15 @@ function GlassPanel({
   const reduceMotion = useReducedMotion();
   const c = dark
     ? {
-        panel: "border-white/25 bg-ink/25 text-white shadow-[0_20px_60px_-20px_rgb(0_0_0/0.5)]",
+        chrome: "border-white/25 text-white shadow-[0_20px_60px_-20px_rgb(0_0_0/0.5)]",
+        fill: frost ? "bg-ink/25 backdrop-blur-lg" : "bg-ink/60",
         soft: "text-white/80",
         cta: "bg-white/90 text-ink hover:bg-white",
         hint: "text-white/60",
       }
     : {
-        panel: "border-white/50 bg-white/35 shadow-[0_20px_60px_-20px_rgb(28_23_19/0.3)]",
+        chrome: "border-white/50 shadow-[0_20px_60px_-20px_rgb(28_23_19/0.3)]",
+        fill: frost ? "bg-white/35 backdrop-blur-lg" : "bg-white/70",
         soft: "text-ink-soft",
         cta: "border border-ink/20 bg-ivory/60 hover:bg-ink hover:text-ivory",
         hint: "text-ink-soft",
@@ -206,9 +216,9 @@ function GlassPanel({
 
   return (
     <div
-      className={`w-full max-w-xl select-text rounded-3xl border px-6 py-6 text-center backdrop-blur-2xl transition-all duration-500 ease-out motion-reduce:transition-none md:max-w-2xl md:px-8 md:py-6 ${
+      className={`w-full max-w-xl select-text rounded-3xl border px-6 py-6 text-center transition-all duration-500 ease-out motion-reduce:transition-none md:max-w-2xl md:px-8 md:py-6 ${
         active ? "translate-y-0 opacity-100" : "translate-y-2 opacity-0"
-      } ${c.panel} ${className}`}
+      } ${c.chrome} ${c.fill} ${className}`}
     >
       <h2 className="font-display text-3xl tracking-tight md:text-5xl">
         <ProductName name={product.name} />
@@ -337,9 +347,11 @@ export function ProductSlide({ product, active, near, onPeek, onOpen, onHeroLayo
             {/* pedestal glow: soft blurred halo in the product's ambient hue */}
             <div
               aria-hidden
-              className="pointer-events-none absolute left-1/2 top-[6%] -z-10 h-[52%] w-[82%] max-w-2xl -translate-x-1/2 rounded-full blur-3xl"
+              // pure gradient falloff, no filter — a real blur-3xl here costs
+              // Safari a huge Gaussian pass per slide for an identical glow
+              className="pointer-events-none absolute left-1/2 top-[6%] -z-10 h-[52%] w-[82%] max-w-2xl -translate-x-1/2 rounded-full"
               style={{
-                background: `radial-gradient(closest-side, hsl(${hue} 42% 68% / 0.4), transparent 72%)`,
+                background: `radial-gradient(closest-side, hsl(${hue} 42% 68% / 0.4) 0%, hsl(${hue} 42% 68% / 0.22) 40%, hsl(${hue} 42% 68% / 0.08) 62%, transparent 80%)`,
               }}
             />
 
@@ -374,6 +386,7 @@ export function ProductSlide({ product, active, near, onPeek, onOpen, onHeroLayo
               <GlassPanel
                 product={product}
                 active={active}
+                frost={near}
                 onOpen={onOpen}
                 className="mt-6 md:mt-0"
                 hintEmphasis={hintPhase === "up" && !heroShowing}
@@ -471,6 +484,7 @@ export function ProductSlide({ product, active, near, onPeek, onOpen, onHeroLayo
                 product={product}
                 dark
                 active={active}
+                frost={near}
                 onOpen={onOpen}
                 className="pointer-events-auto"
                 hintEmphasis={hintPhase === "up" && heroShowing}
