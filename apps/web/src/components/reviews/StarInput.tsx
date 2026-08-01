@@ -36,7 +36,7 @@ export function StarInput({ value, onChange, disabled }: Props) {
         >
           <svg
             viewBox="0 0 20 20"
-            className={`h-7 w-7 transition-colors ${star <= shown ? "text-clay" : "text-line"}`}
+            className={`h-7 w-7 transition-colors ${star <= shown ? "text-star" : "text-line"}`}
             fill="currentColor"
           >
             <path d={STAR_PATH} />

@@ -17,35 +17,52 @@ interface Props {
   rating: number | null;
   count?: number;
   className?: string;
+  /** Color for the secondary text — override on dark/glass surfaces. */
+  mutedClassName?: string;
+  /** Stacked: larger centered stars with the count on its own line below. */
+  stacked?: boolean;
 }
 
 /** Fractional star display: outline row with a width-clipped filled overlay. */
-export function StarRating({ rating, count, className = "" }: Props) {
+export function StarRating({
+  rating,
+  count,
+  className = "",
+  mutedClassName = "text-ink-soft",
+  stacked = false,
+}: Props) {
   if (rating === null) {
     return (
-      <span className={`text-sm text-ink-soft ${className}`}>No reviews yet</span>
+      <span className={`text-sm ${mutedClassName} ${className}`}>No reviews yet</span>
     );
   }
   const pct = Math.max(0, Math.min(100, (rating / 5) * 100));
+  const stars = (
+    <span className={`relative inline-flex leading-none ${stacked ? "text-2xl" : "text-base"}`}>
+      <StarRow className="text-line" />
+      <span
+        className="absolute inset-y-0 left-0 overflow-hidden whitespace-nowrap"
+        style={{ width: `${pct}%` }}
+      >
+        <StarRow className="text-star" />
+      </span>
+    </span>
+  );
+  const label = count !== undefined && (
+    <span className={`text-sm ${mutedClassName}`}>
+      {rating.toFixed(1)} · {count} review{count === 1 ? "" : "s"}
+    </span>
+  );
+
   return (
     <span
-      className={`inline-flex items-center gap-2 ${className}`}
+      className={`${
+        stacked ? "inline-flex flex-col items-center gap-1.5" : "inline-flex items-center gap-2"
+      } ${className}`}
       aria-label={`Rated ${rating.toFixed(1)} out of 5${count !== undefined ? ` from ${count} reviews` : ""}`}
     >
-      <span className="relative inline-flex text-base leading-none">
-        <StarRow className="text-line" />
-        <span
-          className="absolute inset-y-0 left-0 overflow-hidden whitespace-nowrap"
-          style={{ width: `${pct}%` }}
-        >
-          <StarRow className="text-clay" />
-        </span>
-      </span>
-      {count !== undefined && (
-        <span className="text-sm text-ink-soft">
-          {rating.toFixed(1)} · {count} review{count === 1 ? "" : "s"}
-        </span>
-      )}
+      {stars}
+      {label}
     </span>
   );
 }

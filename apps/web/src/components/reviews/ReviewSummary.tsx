@@ -28,7 +28,7 @@ export function ReviewSummary({ reviews }: { reviews: ReviewDTO[] }) {
             <dt className="w-8 shrink-0 text-right tabular-nums text-ink-soft">{stars}★</dt>
             <dd className="h-1.5 flex-1 overflow-hidden rounded-full bg-line">
               <span
-                className="block h-full rounded-full bg-clay"
+                className="block h-full rounded-full bg-star"
                 style={{ width: `${(count / reviews.length) * 100}%` }}
               />
             </dd>
